@@ -272,10 +272,5 @@ async def get_soundings_range(params: GetRecentSoundingsInput) -> str:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    logger.info(f"Starting RAOB Sounding Data MCP server on port {port}")
-    mcp.run(
-        transport="streamable-http",
-        host="0.0.0.0",
-        port=port,
-    )
+    logger.info("Starting RAOB Sounding Data MCP server")
+    mcp.run(transport="streamable-http")

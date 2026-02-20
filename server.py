@@ -272,11 +272,15 @@ async def get_soundings_range(params: GetRecentSoundingsInput) -> str:
 # Run
 # ---------------------------------------------------------------------------
 
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+
 if __name__ == "__main__":
     logger.info("Starting RAOB Sounding Data MCP server")
     port = int(os.environ.get("PORT", 8000))
+    app = mcp.streamable_http_app()
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
     uvicorn.run(
-        mcp.streamable_http_app(),
+        app,
         host="0.0.0.0",
         port=port,
         proxy_headers=True,

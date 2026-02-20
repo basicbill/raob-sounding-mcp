@@ -12,6 +12,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 import httpx
+import uvicorn
 from mcp.server.fastmcp import FastMCP
 
 # ---------------------------------------------------------------------------
@@ -21,7 +22,14 @@ from mcp.server.fastmcp import FastMCP
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP("raob_sounding_mcp")
+from mcp.server.transport_security import TransportSecuritySettings
+
+mcp = FastMCP(
+    "raob_sounding_mcp",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False
+    )
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -271,6 +279,17 @@ async def get_soundings_range(params: GetRecentSoundingsInput) -> str:
 # Run
 # ---------------------------------------------------------------------------
 
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+
 if __name__ == "__main__":
     logger.info("Starting RAOB Sounding Data MCP server")
-    mcp.run(transport="streamable-http")
+    port = int(os.environ.get("PORT", 8000))
+    app = mcp.streamable_http_app()
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        proxy_headers=True,
+        forwarded_allow_ips="*"
+    )

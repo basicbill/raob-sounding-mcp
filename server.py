@@ -36,7 +36,7 @@ mcp = FastMCP(
 # ---------------------------------------------------------------------------
 
 IEM_BASE_URL = "https://mesonet.agron.iastate.edu"
-IEM_SOUNDING_URL = f"{IEM_BASE_URL}/api/1/raob.json"
+IEM_SOUNDING_URL = f"{IEM_BASE_URL}/json/raob.py"
 IEM_NETWORK_URL = f"{IEM_BASE_URL}/api/1/network/RAOB.json"
 TIMEOUT = 30.0
 
@@ -222,13 +222,16 @@ async def get_sounding(params: GetSoundingInput) -> str:
              and station metadata.
     """
     try:
+        ts = f"{params.date.replace('-', '')}{params.hour:02d}00"
         query_params = {
             "station": params.station.upper(),
-            "date": params.date,
-            "hour": params.hour,
-            "fmt": "json",
+            "ts": ts,
         }
         data = await _iem_get(IEM_SOUNDING_URL, query_params)
+
+        if not data.get("profiles"):
+            return f"Sounding data not found for {params.station} on {params.date} {params.hour:02d}Z."
+
         return json.dumps(data, indent=2)
 
     except Exception as e:
@@ -262,14 +265,21 @@ async def get_soundings_range(params: GetRecentSoundingsInput) -> str:
              Each sounding includes full vertical profile data.
     """
     try:
-        query_params = {
-            "station": params.station.upper(),
-            "begints": f"{params.start_date}T00:00:00",
-            "endts": f"{params.end_date}T23:59:59",
-            "fmt": "json",
-        }
-        data = await _iem_get(IEM_SOUNDING_URL, query_params)
-        return json.dumps(data, indent=2)
+        from datetime import date, timedelta
+        start = date.fromisoformat(params.start_date)
+        end = date.fromisoformat(params.end_date)
+        all_profiles = []
+
+        current = start
+        while current <= end:
+            for hour in [0, 12]:
+                ts = f"{current.strftime('%Y%m%d')}{hour:02d}00"
+                query_params = {"station": params.station.upper(), "ts": ts}
+                data = await _iem_get(IEM_SOUNDING_URL, query_params)
+                all_profiles.extend(data.get("profiles", []))
+            current += timedelta(days=1)
+
+        return json.dumps({"profiles": all_profiles}, indent=2)
 
     except Exception as e:
         return _handle_error(e)

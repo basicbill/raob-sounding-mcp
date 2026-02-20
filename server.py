@@ -22,7 +22,14 @@ from mcp.server.fastmcp import FastMCP
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP("raob_sounding_mcp")
+from mcp.server.transport_security import TransportSecuritySettings
+
+mcp = FastMCP(
+    "raob_sounding_mcp",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False
+    )
+)
 
 # ---------------------------------------------------------------------------
 # Constants

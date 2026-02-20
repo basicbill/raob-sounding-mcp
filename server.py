@@ -8,7 +8,6 @@ import json
 import math
 import logging
 import os
-import uvicorn
 from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -275,4 +274,10 @@ async def get_soundings_range(params: GetRecentSoundingsInput) -> str:
 if __name__ == "__main__":
     logger.info("Starting RAOB Sounding Data MCP server")
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(mcp.streamable_http_app(), host="0.0.0.0", port=port)
+    uvicorn.run(
+        mcp.streamable_http_app(),
+        host="0.0.0.0",
+        port=port,
+        proxy_headers=True,
+        forwarded_allow_ips="*"
+    )

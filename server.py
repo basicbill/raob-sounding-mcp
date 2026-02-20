@@ -12,6 +12,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 import httpx
+import uvicorn
 from mcp.server.fastmcp import FastMCP
 
 # ---------------------------------------------------------------------------
